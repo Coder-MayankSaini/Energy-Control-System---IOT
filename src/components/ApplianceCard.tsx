@@ -1,6 +1,7 @@
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Loader2, Clock, Timer } from "lucide-react";
 import { Appliance } from "@/hooks/useSmartHome";
 
 interface ApplianceCardProps {
@@ -8,6 +9,8 @@ interface ApplianceCardProps {
   isLoading: boolean;
   onToggle: (id: number) => void;
   onClick: () => void;
+  onScheduleClick: () => void;
+  onTimerClick: () => void;
 }
 
 export const ApplianceCard = ({
@@ -15,9 +18,13 @@ export const ApplianceCard = ({
   isLoading,
   onToggle,
   onClick,
+  onScheduleClick,
+  onTimerClick,
 }: ApplianceCardProps) => {
   const stateColor = appliance.state ? "text-success" : "text-muted-foreground";
   const stateText = appliance.state ? "ON" : "OFF";
+  const hasActiveSchedules = appliance.schedules.some((s) => s.enabled);
+  const hasActiveTimer = appliance.timer !== null;
 
   return (
     <Card
@@ -51,6 +58,34 @@ export const ApplianceCard = ({
           <div className="text-xs text-muted-foreground">
             Updated: {new Date(appliance.lastUpdate).toLocaleTimeString()}
           </div>
+        </div>
+
+        {/* Schedule and Timer Buttons */}
+        <div className="flex gap-2 mt-4">
+          <Button
+            size="sm"
+            variant={hasActiveSchedules ? "default" : "outline"}
+            className="flex-1"
+            onClick={(e) => {
+              e.stopPropagation();
+              onScheduleClick();
+            }}
+          >
+            <Clock className="h-4 w-4 mr-1" />
+            {hasActiveSchedules ? `${appliance.schedules.filter((s) => s.enabled).length}` : "Schedule"}
+          </Button>
+          <Button
+            size="sm"
+            variant={hasActiveTimer ? "default" : "outline"}
+            className="flex-1"
+            onClick={(e) => {
+              e.stopPropagation();
+              onTimerClick();
+            }}
+          >
+            <Timer className="h-4 w-4 mr-1" />
+            Timer
+          </Button>
         </div>
       </CardContent>
     </Card>

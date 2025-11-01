@@ -7,11 +7,15 @@ import { HistoricalCharts } from "@/components/HistoricalCharts";
 import { ApplianceDetails } from "@/components/ApplianceDetails";
 import { NotificationsPanel } from "@/components/NotificationsPanel";
 import { SettingsModal } from "@/components/SettingsModal";
+import { ScheduleModal } from "@/components/ScheduleModal";
+import { TimerModal } from "@/components/TimerModal";
 import { useSmartHome } from "@/hooks/useSmartHome";
 
 const Index = () => {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [selectedApplianceId, setSelectedApplianceId] = useState<number | null>(null);
+  const [scheduleApplianceId, setScheduleApplianceId] = useState<number | null>(null);
+  const [timerApplianceId, setTimerApplianceId] = useState<number | null>(null);
 
   const {
     appliances,
@@ -24,11 +28,24 @@ const Index = () => {
     toggleAppliance,
     dismissNotification,
     resetStatistics,
+    addSchedule,
+    deleteSchedule,
+    toggleSchedule,
+    setTimer,
+    cancelTimer,
     electricityRate,
   } = useSmartHome();
 
   const selectedAppliance = selectedApplianceId
     ? appliances.find((a) => a.id === selectedApplianceId)
+    : null;
+
+  const scheduleAppliance = scheduleApplianceId
+    ? appliances.find((a) => a.id === scheduleApplianceId)
+    : null;
+
+  const timerAppliance = timerApplianceId
+    ? appliances.find((a) => a.id === timerApplianceId)
     : null;
 
   return (
@@ -57,6 +74,8 @@ const Index = () => {
                   isLoading={isLoading}
                   onToggle={toggleAppliance}
                   onClick={() => setSelectedApplianceId(appliance.id)}
+                  onScheduleClick={() => setScheduleApplianceId(appliance.id)}
+                  onTimerClick={() => setTimerApplianceId(appliance.id)}
                 />
               ))}
             </div>
@@ -87,6 +106,23 @@ const Index = () => {
           open={settingsOpen}
           onOpenChange={setSettingsOpen}
           onResetStatistics={resetStatistics}
+        />
+
+        <ScheduleModal
+          open={scheduleApplianceId !== null}
+          onOpenChange={(open) => !open && setScheduleApplianceId(null)}
+          appliance={scheduleAppliance}
+          onAddSchedule={addSchedule}
+          onDeleteSchedule={deleteSchedule}
+          onToggleSchedule={toggleSchedule}
+        />
+
+        <TimerModal
+          open={timerApplianceId !== null}
+          onOpenChange={(open) => !open && setTimerApplianceId(null)}
+          appliance={timerAppliance}
+          onSetTimer={setTimer}
+          onCancelTimer={cancelTimer}
         />
       </div>
     </div>

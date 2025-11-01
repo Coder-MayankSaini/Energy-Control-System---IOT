@@ -1,6 +1,21 @@
 import { useState, useEffect, useCallback } from "react";
 import { toast } from "@/hooks/use-toast";
 
+export interface Schedule {
+  id: string;
+  enabled: boolean;
+  time: string; // HH:mm format
+  days: number[]; // 0-6 (Sun-Sat)
+  action: "on" | "off";
+}
+
+export interface Timer {
+  enabled: boolean;
+  duration: number; // minutes
+  startTime: number; // timestamp
+  action: "on" | "off";
+}
+
 export interface Appliance {
   id: number;
   name: string;
@@ -10,6 +25,8 @@ export interface Appliance {
   lastUpdate: number;
   energyToday: number;
   usageDuration: number;
+  schedules: Schedule[];
+  timer: Timer | null;
 }
 
 export interface Metrics {
@@ -55,6 +72,8 @@ const mockAppliances: Appliance[] = [
     lastUpdate: Date.now(),
     energyToday: 0.48,
     usageDuration: 28800,
+    schedules: [],
+    timer: null,
   },
   {
     id: 2,
@@ -65,6 +84,8 @@ const mockAppliances: Appliance[] = [
     lastUpdate: Date.now(),
     energyToday: 0.9,
     usageDuration: 43200,
+    schedules: [],
+    timer: null,
   },
   {
     id: 3,
@@ -75,6 +96,8 @@ const mockAppliances: Appliance[] = [
     lastUpdate: Date.now(),
     energyToday: 1.2,
     usageDuration: 21600,
+    schedules: [],
+    timer: null,
   },
   {
     id: 4,
@@ -85,6 +108,8 @@ const mockAppliances: Appliance[] = [
     lastUpdate: Date.now(),
     energyToday: 0.68,
     usageDuration: 25200,
+    schedules: [],
+    timer: null,
   },
 ];
 
@@ -221,6 +246,102 @@ export const useSmartHome = () => {
     });
   }, [addNotification]);
 
+  const addSchedule = useCallback((applianceId: number, schedule: Omit<Schedule, "id">) => {
+    const newSchedule: Schedule = {
+      ...schedule,
+      id: Date.now().toString(),
+    };
+    setAppliances((prev) =>
+      prev.map((a) =>
+        a.id === applianceId
+          ? { ...a, schedules: [...a.schedules, newSchedule] }
+          : a
+      )
+    );
+    addNotification("info", "Schedule added successfully");
+    toast({
+      title: "Success",
+      description: "Schedule has been added",
+    });
+  }, [addNotification]);
+
+  const deleteSchedule = useCallback((applianceId: number, scheduleId: string) => {
+    setAppliances((prev) =>
+      prev.map((a) =>
+        a.id === applianceId
+          ? { ...a, schedules: a.schedules.filter((s) => s.id !== scheduleId) }
+          : a
+      )
+    );
+    addNotification("info", "Schedule deleted");
+  }, [addNotification]);
+
+  const toggleSchedule = useCallback((applianceId: number, scheduleId: string) => {
+    setAppliances((prev) =>
+      prev.map((a) =>
+        a.id === applianceId
+          ? {
+              ...a,
+              schedules: a.schedules.map((s) =>
+                s.id === scheduleId ? { ...s, enabled: !s.enabled } : s
+              ),
+            }
+          : a
+      )
+    );
+  }, []);
+
+  const setTimer = useCallback((applianceId: number, duration: number, action: "on" | "off") => {
+    const appliance = appliances.find((a) => a.id === applianceId);
+    if (!appliance) return;
+
+    const timer: Timer = {
+      enabled: true,
+      duration,
+      startTime: Date.now(),
+      action,
+    };
+
+    setAppliances((prev) =>
+      prev.map((a) => (a.id === applianceId ? { ...a, timer } : a))
+    );
+
+    addNotification("info", `Timer set for ${duration} minutes`);
+    toast({
+      title: "Success",
+      description: `Timer set for ${duration} minutes`,
+    });
+  }, [appliances, addNotification]);
+
+  const cancelTimer = useCallback((applianceId: number) => {
+    setAppliances((prev) =>
+      prev.map((a) => (a.id === applianceId ? { ...a, timer: null } : a))
+    );
+    addNotification("info", "Timer cancelled");
+  }, [addNotification]);
+
+  // Check timers
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = Date.now();
+      appliances.forEach((appliance) => {
+        if (appliance.timer && appliance.timer.enabled) {
+          const elapsed = (now - appliance.timer.startTime) / 1000 / 60; // minutes
+          if (elapsed >= appliance.timer.duration) {
+            toggleAppliance(appliance.id);
+            cancelTimer(appliance.id);
+            addNotification(
+              "info",
+              `Timer completed: ${appliance.name} turned ${appliance.timer.action.toUpperCase()}`
+            );
+          }
+        }
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [appliances, toggleAppliance, cancelTimer, addNotification]);
+
   return {
     appliances,
     metrics,
@@ -232,6 +353,11 @@ export const useSmartHome = () => {
     toggleAppliance,
     dismissNotification,
     resetStatistics,
+    addSchedule,
+    deleteSchedule,
+    toggleSchedule,
+    setTimer,
+    cancelTimer,
     electricityRate: ELECTRICITY_RATE,
   };
 };
