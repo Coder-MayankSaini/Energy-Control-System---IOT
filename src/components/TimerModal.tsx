@@ -37,7 +37,7 @@ export const TimerModal = ({
 
   const getRemainingTime = () => {
     if (!appliance?.timer) return null;
-    const elapsed = (Date.now() - appliance.timer.startTime) / 1000 / 60;
+    const elapsed = (Date.now() - appliance.timer.startTime) / 1000;
     const remaining = Math.max(0, appliance.timer.duration - elapsed);
     return Math.ceil(remaining);
   };
@@ -70,7 +70,7 @@ export const TimerModal = ({
                   <X className="h-4 w-4" />
                 </Button>
               </div>
-              <div className="text-2xl font-bold">{remainingTime} min remaining</div>
+              <div className="text-2xl font-bold">{remainingTime} sec remaining</div>
               <div className="text-sm text-muted-foreground">
                 Will turn {appliance.timer.action.toUpperCase()}
               </div>
@@ -82,11 +82,11 @@ export const TimerModal = ({
             <h3 className="font-semibold">Set New Timer</h3>
             
             <div className="space-y-2">
-              <Label>Duration (minutes)</Label>
+              <Label>Duration (seconds)</Label>
               <Input
                 type="number"
                 min="1"
-                max="1440"
+                max="86400"
                 value={duration}
                 onChange={(e) => setDuration(parseInt(e.target.value) || 0)}
               />
@@ -94,30 +94,30 @@ export const TimerModal = ({
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => setDuration(5)}
+                  onClick={() => setDuration(10)}
                 >
-                  5 min
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setDuration(15)}
-                >
-                  15 min
+                  10 sec
                 </Button>
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={() => setDuration(30)}
                 >
-                  30 min
+                  30 sec
                 </Button>
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={() => setDuration(60)}
                 >
-                  1 hour
+                  1 min
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setDuration(120)}
+                >
+                  2 min
                 </Button>
               </div>
             </div>

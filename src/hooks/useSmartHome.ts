@@ -11,7 +11,7 @@ export interface Schedule {
 
 export interface Timer {
   enabled: boolean;
-  duration: number; // minutes
+  duration: number; // seconds
   startTime: number; // timestamp
   action: "on" | "off";
 }
@@ -57,7 +57,7 @@ export interface Notification {
   timestamp: number;
 }
 
-const DEFAULT_NODEMCU_IP = "10.105.117.131";
+const DEFAULT_NODEMCU_IP = "10.105.117.150";
 const API_PORT = 80;
 const UPDATE_INTERVAL = 2000;
 const ELECTRICITY_RATE = 8.5;
@@ -319,10 +319,10 @@ export const useSmartHome = () => {
       prev.map((a) => (a.id === applianceId ? { ...a, timer } : a))
     );
 
-    addNotification("info", `Timer set for ${duration} minutes`);
+    addNotification("info", `Timer set for ${duration} seconds`);
     toast({
       title: "Success",
-      description: `Timer set for ${duration} minutes`,
+      description: `Timer set for ${duration} seconds`,
     });
   }, [appliances, addNotification]);
 
@@ -370,7 +370,7 @@ export const useSmartHome = () => {
       const now = Date.now();
       appliances.forEach((appliance) => {
         if (appliance.timer && appliance.timer.enabled) {
-          const elapsed = (now - appliance.timer.startTime) / 1000 / 60; // minutes
+          const elapsed = (now - appliance.timer.startTime) / 1000; // seconds
           if (elapsed >= appliance.timer.duration) {
             toggleAppliance(appliance.id);
             cancelTimer(appliance.id);
