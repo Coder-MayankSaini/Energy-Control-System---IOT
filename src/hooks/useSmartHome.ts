@@ -27,6 +27,7 @@ export interface Appliance {
   usageDuration: number;
   schedules: Schedule[];
   timer: Timer | null;
+  inverted?: boolean; // For relays that work opposite (active LOW)
 }
 
 export interface Metrics {
@@ -86,6 +87,7 @@ const mockAppliances: Appliance[] = [
     usageDuration: 43200,
     schedules: [],
     timer: null,
+    inverted: true,
   },
   {
     id: 3,
@@ -110,6 +112,7 @@ const mockAppliances: Appliance[] = [
     usageDuration: 25200,
     schedules: [],
     timer: null,
+    inverted: true,
   },
 ];
 
@@ -206,10 +209,13 @@ export const useSmartHome = () => {
         // Call NodeMCU relay toggle endpoint
         await fetch(url, { mode: 'no-cors' });
 
+        // For inverted relays, the state needs to be flipped
+        const newState = appliance.inverted ? appliance.state : !appliance.state;
+
         setAppliances((prev) =>
           prev.map((a) =>
             a.id === id
-              ? { ...a, state: !a.state, lastUpdate: Date.now() }
+              ? { ...a, state: newState, lastUpdate: Date.now() }
               : a
           )
         );
