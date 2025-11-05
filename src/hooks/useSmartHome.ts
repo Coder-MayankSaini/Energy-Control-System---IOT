@@ -56,7 +56,7 @@ export interface Notification {
   timestamp: number;
 }
 
-const NODEMCU_IP = "192.168.1.100";
+const NODEMCU_IP = "10.105.117.131";
 const API_PORT = 80;
 const UPDATE_INTERVAL = 2000;
 const ELECTRICITY_RATE = 8.5;
@@ -196,8 +196,12 @@ export const useSmartHome = () => {
       if (!appliance) return;
 
       try {
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        // Map appliance ID to relay index (1->0, 2->1, 3->2, 4->3)
+        const relayIndex = id - 1;
+        const url = `http://${NODEMCU_IP}/toggle?r=${relayIndex}`;
+        
+        // Call NodeMCU relay toggle endpoint
+        await fetch(url, { mode: 'no-cors' });
 
         setAppliances((prev) =>
           prev.map((a) =>
