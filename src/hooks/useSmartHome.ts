@@ -56,7 +56,7 @@ export interface Notification {
   timestamp: number;
 }
 
-const NODEMCU_IP = "10.105.117.131";
+const DEFAULT_NODEMCU_IP = "10.105.117.131";
 const API_PORT = 80;
 const UPDATE_INTERVAL = 2000;
 const ELECTRICITY_RATE = 8.5;
@@ -131,6 +131,9 @@ export const useSmartHome = () => {
   const [history24h, setHistory24h] = useState<HistoryDataPoint[]>([]);
   const [history7d, setHistory7d] = useState<WeeklyDataPoint[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [nodeMcuIp, setNodeMcuIp] = useState<string>(() => {
+    return localStorage.getItem("nodeMcuIp") || DEFAULT_NODEMCU_IP;
+  });
 
   // Generate mock historical data
   useEffect(() => {
@@ -198,7 +201,7 @@ export const useSmartHome = () => {
       try {
         // Map appliance ID to relay index (1->0, 2->1, 3->2, 4->3)
         const relayIndex = id - 1;
-        const url = `http://${NODEMCU_IP}/toggle?r=${relayIndex}`;
+        const url = `http://${nodeMcuIp}/toggle?r=${relayIndex}`;
         
         // Call NodeMCU relay toggle endpoint
         await fetch(url, { mode: 'no-cors' });
@@ -324,6 +327,37 @@ export const useSmartHome = () => {
     addNotification("info", "Timer cancelled");
   }, [addNotification]);
 
+  const updateNodeMcuIp = useCallback((newIp: string) => {
+    const ipRegex = /^(\d{1,3}\.){3}\d{1,3}$/;
+    if (!ipRegex.test(newIp)) {
+      toast({
+        title: "Invalid IP",
+        description: "Please enter a valid IP address",
+        variant: "destructive",
+      });
+      return false;
+    }
+    
+    const parts = newIp.split('.');
+    if (parts.some(part => parseInt(part) > 255)) {
+      toast({
+        title: "Invalid IP",
+        description: "IP address parts must be between 0-255",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    setNodeMcuIp(newIp);
+    localStorage.setItem("nodeMcuIp", newIp);
+    addNotification("info", `NodeMCU IP updated to ${newIp}`);
+    toast({
+      title: "Success",
+      description: "NodeMCU IP address updated",
+    });
+    return true;
+  }, [addNotification]);
+
   // Check timers
   useEffect(() => {
     const interval = setInterval(() => {
@@ -363,5 +397,7 @@ export const useSmartHome = () => {
     setTimer,
     cancelTimer,
     electricityRate: ELECTRICITY_RATE,
+    nodeMcuIp,
+    updateNodeMcuIp,
   };
 };

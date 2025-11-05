@@ -34,6 +34,8 @@ const Index = () => {
     setTimer,
     cancelTimer,
     electricityRate,
+    nodeMcuIp,
+    updateNodeMcuIp,
   } = useSmartHome();
 
   const selectedAppliance = selectedApplianceId
@@ -102,11 +104,13 @@ const Index = () => {
           </div>
         )}
 
-        <SettingsModal
-          open={settingsOpen}
-          onOpenChange={setSettingsOpen}
-          onResetStatistics={resetStatistics}
-        />
+      <SettingsModal
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+        onResetStatistics={resetStatistics}
+        nodeMcuIp={nodeMcuIp}
+        onUpdateIp={updateNodeMcuIp}
+      />
 
         <ScheduleModal
           open={scheduleApplianceId !== null}

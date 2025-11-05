@@ -6,6 +6,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { RefreshCw, RotateCcw, Moon, Sun } from "lucide-react";
@@ -15,18 +16,29 @@ interface SettingsModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onResetStatistics: () => void;
+  nodeMcuIp: string;
+  onUpdateIp: (ip: string) => boolean;
 }
 
 export const SettingsModal = ({
   open,
   onOpenChange,
   onResetStatistics,
+  nodeMcuIp,
+  onUpdateIp,
 }: SettingsModalProps) => {
   const [isDarkMode, setIsDarkMode] = useState(true);
+  const [ipInput, setIpInput] = useState(nodeMcuIp);
 
   const toggleTheme = () => {
     setIsDarkMode(!isDarkMode);
     document.documentElement.classList.toggle("dark");
+  };
+
+  const handleIpUpdate = () => {
+    if (onUpdateIp(ipInput)) {
+      // IP updated successfully
+    }
   };
 
   return (
@@ -40,6 +52,30 @@ export const SettingsModal = ({
         </DialogHeader>
         <div className="space-y-6 py-4">
           <div className="space-y-4">
+            <h3 className="font-semibold">NodeMCU Configuration</h3>
+            <div className="space-y-3">
+              <div>
+                <Label htmlFor="ip-address" className="text-sm">IP Address</Label>
+                <div className="flex gap-2 mt-1.5">
+                  <Input
+                    id="ip-address"
+                    placeholder="192.168.1.100"
+                    value={ipInput}
+                    onChange={(e) => setIpInput(e.target.value)}
+                    className="flex-1"
+                  />
+                  <Button onClick={handleIpUpdate} size="sm">
+                    Update
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1.5">
+                  Current: {nodeMcuIp}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-4">
             <h3 className="font-semibold">System Information</h3>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
@@ -49,10 +85,6 @@ export const SettingsModal = ({
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Signal Strength:</span>
                 <span className="font-medium">-45 dBm (Excellent)</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">IP Address:</span>
-                <span className="font-medium">192.168.1.100</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Uptime:</span>
