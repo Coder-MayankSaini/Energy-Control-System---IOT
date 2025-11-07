@@ -131,56 +131,12 @@ export const useSmartHome = () => {
   const [metrics, setMetrics] = useState<Metrics>(mockMetrics);
   const [isOnline, setIsOnline] = useState(true);
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [history24h, setHistory24h] = useState<HistoryDataPoint[]>([]);
-  const [history7d, setHistory7d] = useState<WeeklyDataPoint[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [loadingAppliances, setLoadingAppliances] = useState<Set<number>>(new Set());
   const [nodeMcuIp, setNodeMcuIp] = useState<string>(() => {
     return localStorage.getItem("nodeMcuIp") || DEFAULT_NODEMCU_IP;
   });
 
-  // Generate mock historical data
-  useEffect(() => {
-    const generate24h = () => {
-      const data: HistoryDataPoint[] = [];
-      for (let i = 0; i < 24; i++) {
-        data.push({
-          time: `${i.toString().padStart(2, "0")}:00`,
-          power: Math.floor(Math.random() * 300) + 50,
-        });
-      }
-      return data;
-    };
 
-    const generate7d = () => {
-      const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-      return days.map((day) => ({
-        day,
-        energy: Math.floor(Math.random() * 10) + 5,
-      }));
-    };
-
-    setHistory24h(generate24h());
-    setHistory7d(generate7d());
-  }, []);
-
-  // Simulate real-time updates
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setMetrics((prev) => ({
-        ...prev,
-        power: Math.max(0, prev.power + (Math.random() - 0.5) * 20),
-        current: Math.max(0, prev.current + (Math.random() - 0.5) * 0.1),
-        timestamp: Date.now(),
-      }));
-
-      // Random high power warning
-      if (Math.random() > 0.95) {
-        addNotification("warning", "High power consumption detected");
-      }
-    }, UPDATE_INTERVAL);
-
-    return () => clearInterval(interval);
-  }, []);
 
   const addNotification = useCallback(
     (type: "info" | "warning" | "error", message: string) => {
@@ -197,9 +153,16 @@ export const useSmartHome = () => {
 
   const toggleAppliance = useCallback(
     async (id: number) => {
-      setIsLoading(true);
+      setLoadingAppliances(prev => new Set(prev).add(id));
       const appliance = appliances.find((a) => a.id === id);
-      if (!appliance) return;
+      if (!appliance) {
+        setLoadingAppliances(prev => {
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
+        return;
+      }
 
       try {
         // Map appliance ID to relay index (1->0, 2->1, 3->2, 4->3)
@@ -237,27 +200,19 @@ export const useSmartHome = () => {
           variant: "destructive",
         });
       } finally {
-        setIsLoading(false);
+        setLoadingAppliances(prev => {
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
       }
     },
-    [appliances, addNotification]
+    [appliances, addNotification, nodeMcuIp]
   );
 
   const dismissNotification = useCallback((id: number) => {
     setNotifications((prev) => prev.filter((n) => n.id !== id));
   }, []);
-
-  const resetStatistics = useCallback(() => {
-    setAppliances((prev) =>
-      prev.map((a) => ({ ...a, energyToday: 0, usageDuration: 0 }))
-    );
-    setMetrics((prev) => ({ ...prev, energyToday: 0 }));
-    addNotification("info", "Statistics reset successfully");
-    toast({
-      title: "Success",
-      description: "Statistics have been reset",
-    });
-  }, [addNotification]);
 
   const addSchedule = useCallback((applianceId: number, schedule: Omit<Schedule, "id">) => {
     const newSchedule: Schedule = {
@@ -388,21 +343,16 @@ export const useSmartHome = () => {
 
   return {
     appliances,
-    metrics,
     isOnline,
     notifications,
-    history24h,
-    history7d,
-    isLoading,
+    loadingAppliances,
     toggleAppliance,
     dismissNotification,
-    resetStatistics,
     addSchedule,
     deleteSchedule,
     toggleSchedule,
     setTimer,
     cancelTimer,
-    electricityRate: ELECTRICITY_RATE,
     nodeMcuIp,
     updateNodeMcuIp,
   };

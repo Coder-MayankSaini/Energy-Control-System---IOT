@@ -9,13 +9,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { RefreshCw, RotateCcw, Moon, Sun } from "lucide-react";
+import { RefreshCw, Moon, Sun } from "lucide-react";
 import { useState } from "react";
 
 interface SettingsModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onResetStatistics: () => void;
   nodeMcuIp: string;
   onUpdateIp: (ip: string) => boolean;
 }
@@ -23,7 +22,6 @@ interface SettingsModalProps {
 export const SettingsModal = ({
   open,
   onOpenChange,
-  onResetStatistics,
   nodeMcuIp,
   onUpdateIp,
 }: SettingsModalProps) => {
@@ -122,14 +120,6 @@ export const SettingsModal = ({
               <Button variant="outline" className="w-full justify-start">
                 <RefreshCw className="mr-2 h-4 w-4" />
                 Refresh Now
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full justify-start"
-                onClick={onResetStatistics}
-              >
-                <RotateCcw className="mr-2 h-4 w-4" />
-                Reset Statistics
               </Button>
             </div>
           </div>
