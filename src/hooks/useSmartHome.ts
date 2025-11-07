@@ -57,7 +57,7 @@ export interface Notification {
   timestamp: number;
 }
 
-const DEFAULT_NODEMCU_IP = "10.105.117.150";
+const DEFAULT_ESP32_IP = "10.105.117.150";
 const API_PORT = 80;
 const UPDATE_INTERVAL = 2000;
 const ELECTRICITY_RATE = 8.5;
@@ -132,8 +132,8 @@ export const useSmartHome = () => {
   const [isOnline, setIsOnline] = useState(true);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loadingAppliances, setLoadingAppliances] = useState<Set<number>>(new Set());
-  const [nodeMcuIp, setNodeMcuIp] = useState<string>(() => {
-    return localStorage.getItem("nodeMcuIp") || DEFAULT_NODEMCU_IP;
+  const [esp32Ip, setEsp32Ip] = useState<string>(() => {
+    return localStorage.getItem("esp32Ip") || DEFAULT_ESP32_IP;
   });
 
 
@@ -167,10 +167,14 @@ export const useSmartHome = () => {
       try {
         // Map appliance ID to relay index (1->0, 2->1, 3->2, 4->3)
         const relayIndex = id - 1;
-        const url = `http://${nodeMcuIp}/toggle?r=${relayIndex}`;
+        const url = `http://${esp32Ip}/toggle?r=${relayIndex}`;
         
-        // Call NodeMCU relay toggle endpoint
-        await fetch(url, { mode: 'no-cors' });
+        // Try to call ESP32 relay toggle endpoint (will fail silently if not connected)
+        try {
+          await fetch(url, { mode: 'no-cors' });
+        } catch {
+          // Ignore connection errors - work in demo mode
+        }
 
         // For inverted relays, the state needs to be flipped
         const newState = appliance.inverted ? appliance.state : !appliance.state;
@@ -207,7 +211,7 @@ export const useSmartHome = () => {
         });
       }
     },
-    [appliances, addNotification, nodeMcuIp]
+    [appliances, addNotification, esp32Ip]
   );
 
   const dismissNotification = useCallback((id: number) => {
@@ -288,7 +292,7 @@ export const useSmartHome = () => {
     addNotification("info", "Timer cancelled");
   }, [addNotification]);
 
-  const updateNodeMcuIp = useCallback((newIp: string) => {
+  const updateEsp32Ip = useCallback((newIp: string) => {
     const ipRegex = /^(\d{1,3}\.){3}\d{1,3}$/;
     if (!ipRegex.test(newIp)) {
       toast({
@@ -309,25 +313,36 @@ export const useSmartHome = () => {
       return false;
     }
 
-    setNodeMcuIp(newIp);
-    localStorage.setItem("nodeMcuIp", newIp);
-    addNotification("info", `NodeMCU IP updated to ${newIp}`);
+    setEsp32Ip(newIp);
+    localStorage.setItem("esp32Ip", newIp);
+    addNotification("info", `ESP32 IP updated to ${newIp}`);
     toast({
       title: "Success",
-      description: "NodeMCU IP address updated",
+      description: "ESP32 IP address updated",
     });
     return true;
   }, [addNotification]);
 
-  // Check timers
+  // Check timers and schedules
   useEffect(() => {
     const interval = setInterval(() => {
       const now = Date.now();
+      const currentTime = new Date();
+      const currentHour = currentTime.getHours();
+      const currentMinute = currentTime.getMinutes();
+      const currentDay = currentTime.getDay(); // 0-6 (Sun-Sat)
+      const currentTimeString = `${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')}`;
+
       appliances.forEach((appliance) => {
+        // Check timers
         if (appliance.timer && appliance.timer.enabled) {
           const elapsed = (now - appliance.timer.startTime) / 1000; // seconds
           if (elapsed >= appliance.timer.duration) {
-            toggleAppliance(appliance.id);
+            // Toggle only if current state doesn't match desired action
+            const shouldBeOn = appliance.timer.action === "on";
+            if (appliance.state !== shouldBeOn) {
+              toggleAppliance(appliance.id);
+            }
             cancelTimer(appliance.id);
             addNotification(
               "info",
@@ -335,6 +350,23 @@ export const useSmartHome = () => {
             );
           }
         }
+
+        // Check schedules
+        appliance.schedules.forEach((schedule) => {
+          if (schedule.enabled && schedule.days.includes(currentDay)) {
+            if (schedule.time === currentTimeString) {
+              const shouldBeOn = schedule.action === "on";
+              // Only toggle if current state doesn't match schedule action
+              if (appliance.state !== shouldBeOn) {
+                toggleAppliance(appliance.id);
+                addNotification(
+                  "info",
+                  `Schedule triggered: ${appliance.name} turned ${schedule.action.toUpperCase()}`
+                );
+              }
+            }
+          }
+        });
       });
     }, 1000);
 
@@ -353,7 +385,7 @@ export const useSmartHome = () => {
     toggleSchedule,
     setTimer,
     cancelTimer,
-    nodeMcuIp,
-    updateNodeMcuIp,
+    esp32Ip,
+    updateEsp32Ip,
   };
 };

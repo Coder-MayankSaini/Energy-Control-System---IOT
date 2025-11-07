@@ -25,8 +25,8 @@ const Index = () => {
     toggleSchedule,
     setTimer,
     cancelTimer,
-    nodeMcuIp,
-    updateNodeMcuIp,
+    esp32Ip,
+    updateEsp32Ip,
   } = useSmartHome();
 
   const scheduleAppliance = scheduleApplianceId
@@ -70,8 +70,8 @@ const Index = () => {
         <SettingsModal
           open={settingsOpen}
           onOpenChange={setSettingsOpen}
-          nodeMcuIp={nodeMcuIp}
-          onUpdateIp={updateNodeMcuIp}
+          esp32Ip={esp32Ip}
+          onUpdateIp={updateEsp32Ip}
         />
 
         <ScheduleModal

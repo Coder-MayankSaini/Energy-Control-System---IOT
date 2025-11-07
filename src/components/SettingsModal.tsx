@@ -15,18 +15,18 @@ import { useState } from "react";
 interface SettingsModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  nodeMcuIp: string;
+  esp32Ip: string;
   onUpdateIp: (ip: string) => boolean;
 }
 
 export const SettingsModal = ({
   open,
   onOpenChange,
-  nodeMcuIp,
+  esp32Ip,
   onUpdateIp,
 }: SettingsModalProps) => {
   const [isDarkMode, setIsDarkMode] = useState(true);
-  const [ipInput, setIpInput] = useState(nodeMcuIp);
+  const [ipInput, setIpInput] = useState(esp32Ip);
 
   const toggleTheme = () => {
     setIsDarkMode(!isDarkMode);
@@ -50,7 +50,7 @@ export const SettingsModal = ({
         </DialogHeader>
         <div className="space-y-6 py-4">
           <div className="space-y-4">
-            <h3 className="font-semibold">NodeMCU Configuration</h3>
+            <h3 className="font-semibold">ESP32 Configuration</h3>
             <div className="space-y-3">
               <div>
                 <Label htmlFor="ip-address" className="text-sm">IP Address</Label>
@@ -67,7 +67,7 @@ export const SettingsModal = ({
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1.5">
-                  Current: {nodeMcuIp}
+                  Current: {esp32Ip}
                 </p>
               </div>
             </div>
